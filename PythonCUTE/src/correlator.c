@@ -26,25 +26,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef _HAVE_OMP
+#include <omp.h>
+#endif //_HAVE_OMP
 #include "define.h"
 #include "common.h"
-
-static inline int rt2bin(double r2)
-{
-  int irt;
-
-  if(logbin) {
-    if(r2>0)
-      irt=(int)(n_logint*(0.5*log10(r2)-log_rt_max)+nb_rt);
-    else
-      irt=-1;
-  }
-  else {
-    irt=(int)(sqrt(r2)*i_rt_max*nb_rt);
-  }
-
-  return irt;
-}
 
 static inline int r2bin(double r2)
 {
@@ -93,6 +79,195 @@ static inline int th2bin(double cth)
   }
   
   return ith;
+}
+
+void auto_angular_cross_bf(int npix_full,int *indices,
+			   RadialPixel *pixrad,histo_t *hh)
+{
+  //////
+  // Radial cross-correlator
+  int i,ipix_0,ipix_f;
+  share_iters(npix_full,&ipix_0,&ipix_f);
+
+  for(i=0;i<(nb_red*(nb_red+1)*nb_theta)/2;i++) 
+    hh[i]=0;
+  
+#pragma omp parallel default(none)			\
+  shared(npix_full,indices,pixrad,hh,n_side_phi)	\
+  shared(nb_red,nb_theta,ipix_0,ipix_f)		\
+  shared(i_red_interval,red_0,i_theta_max)
+  {
+    int j;
+    histo_t *hthread=(histo_t *)my_calloc((nb_red*(nb_red+1)*nb_theta)/2,sizeof(histo_t));
+    double cth_aperture=cos(1./i_theta_max);
+
+#pragma omp for nowait schedule(dynamic)
+    for(j=ipix_0;j<ipix_f;j++) {
+      int ii;
+      int ip1=indices[j];
+      int np1=pixrad[ip1].np;
+      RadialPixelInfo *pi1=pixrad[ip1].pi;
+      int *bounds=pi1->bounds;
+
+      for(ii=0;ii<np1;ii++) {
+	int jj,icth;
+	double *pos1=&(pi1->pos[N_POS*ii]);
+	int iz1=(int)((pi1->redshifts[ii]-red_0)*i_red_interval*nb_red);
+	if((iz1>=0)&&(iz1<nb_red)) {
+	  for(jj=ii+1;jj<np1;jj++) {
+	    int iz2=(int)((pi1->redshifts[jj]-red_0)*i_red_interval*nb_red);
+	    if((iz2>=0)&&(iz2<nb_red)) {
+	      double *pos2=&(pi1->pos[N_POS*jj]);
+	      double prod=pos1[0]*pos2[0]+
+		pos1[1]*pos2[1]+pos1[2]*pos2[2];
+	      if(prod>cth_aperture) {
+		int ith=th2bin(prod);
+		if((ith<nb_theta)&&(ith>=0)) {
+		  int imin=MIN(iz1,iz2);
+		  int imax=MAX(iz1,iz2);
+		  int index=ith+nb_theta*((imin*(2*nb_red-imin-1))/2+imax);
+		  //		  int index=ith+nb_theta*(iz1+nb_red*iz2);
+#ifdef _WITH_WEIGHTS
+		  hthread[index]+=pos1[3]*pos2[3];
+#else //_WITH_WEIGHTS
+		  hthread[index]++;
+#endif //_WITH_WEIGHTS
+		}
+	      }
+	    }
+	  }
+
+	  for(icth=bounds[0];icth<=bounds[1];icth++) {
+	    int iphi;
+	    int icth_n=icth*n_side_phi;
+	    for(iphi=bounds[2];iphi<=bounds[3];iphi++) {
+	      int iphi_true=(iphi+n_side_phi)%n_side_phi;
+	      int ip2=iphi_true+icth_n;
+	      if(pixrad[ip2].np>0) {
+		if(ip2>ip1) {
+		  int np2=pixrad[ip2].np;
+		  RadialPixelInfo *pi2=pixrad[ip2].pi;
+		  for(jj=0;jj<np2;jj++) {
+		    int iz2=(int)((pi2->redshifts[jj]-red_0)*i_red_interval*nb_red);
+		    if((iz2>=0)&&(iz2<nb_red)) {
+		      double *pos2=&(pi2->pos[N_POS*jj]);
+		      double prod=pos1[0]*pos2[0]+
+			pos1[1]*pos2[1]+pos1[2]*pos2[2];
+		      if(prod>cth_aperture) {
+			int ith=th2bin(prod);
+			if((ith<nb_theta)&&(ith>=0)) {
+			  int imin=MIN(iz1,iz2);
+			  int imax=MAX(iz1,iz2);
+			  int index=ith+nb_theta*((imin*(2*nb_red-imin-1))/2+imax);
+			  //			  int index=ith+nb_theta*(iz1+nb_red*iz2);
+#ifdef _WITH_WEIGHTS
+			  hthread[index]+=pos1[3]*pos2[3];
+#else //_WITH_WEIGHTS
+			  hthread[index]++;
+#endif //_WITH_WEIGHTS
+			}
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } // end omp for
+
+#pragma omp critical
+    {
+      for(j=0;j<(nb_red*(nb_red+1)*nb_theta)/2;j++)
+	hh[j]+=hthread[j];
+    }
+
+    free(hthread);
+  } //end omp parallel
+}
+
+void cross_angular_cross_bf(int npix_full,int *indices,
+			    RadialPixel *pixrad1,RadialPixel *pixrad2,
+			    histo_t *hh)
+{
+  //////
+  // Radial cross-correlator
+  int i,ipix_0,ipix_f;
+  share_iters(npix_full,&ipix_0,&ipix_f);
+
+  for(i=0;i<(nb_red*(nb_red+1)*nb_theta)/2;i++) 
+    hh[i]=0;
+
+#pragma omp parallel default(none)				\
+  shared(npix_full,indices,pixrad1,pixrad2,hh,n_side_phi)	\
+  shared(nb_red,nb_theta,ipix_0,ipix_f)		\
+  shared(i_red_interval,red_0,i_theta_max)
+  {
+    int j;
+    histo_t *hthread=(histo_t *)my_calloc((nb_red*(nb_red+1)*nb_theta)/2,sizeof(histo_t));
+    double cth_aperture=cos(1./i_theta_max);
+
+#pragma omp for nowait schedule(dynamic)
+    for(j=ipix_0;j<ipix_f;j++) {
+      int ii;
+      int ip1=indices[j];
+      int np1=pixrad1[ip1].np;
+      RadialPixelInfo *pi1=pixrad1[ip1].pi;
+      int *bounds=pi1->bounds;
+
+      for(ii=0;ii<np1;ii++) {
+	int icth;
+	int iz1=(int)((pi1->redshifts[ii]-red_0)*i_red_interval*nb_red);
+	if((iz1>=0)&&(iz1<nb_red)) {
+	  double *pos1=&(pi1->pos[N_POS*ii]);
+	  for(icth=bounds[0];icth<=bounds[1];icth++) {
+	    int iphi;
+	    int icth_n=icth*n_side_phi;
+	    for(iphi=bounds[2];iphi<=bounds[3];iphi++) {
+	      int iphi_true=(iphi+n_side_phi)%n_side_phi;
+	      int ip2=iphi_true+icth_n;
+	      if(pixrad2[ip2].np>0) {
+		int jj;
+		int np2=pixrad2[ip2].np;
+		RadialPixelInfo *pi2=pixrad2[ip2].pi;
+		for(jj=0;jj<np2;jj++) {
+		  int iz2=(int)((pi2->redshifts[jj]-red_0)*i_red_interval*nb_red);
+		  if((iz2>=0)&&(iz2<nb_red)) {
+		    double *pos2=&(pi2->pos[N_POS*jj]);
+		    double prod=pos1[0]*pos2[0]+
+		      pos1[1]*pos2[1]+pos1[2]*pos2[2];
+		    if(prod>cth_aperture) {
+		      int ith=th2bin(prod);
+		      if((ith<nb_theta)&&(ith>=0)) {
+			int imin=MIN(iz1,iz2);
+			int imax=MAX(iz1,iz2);
+			int index=ith+nb_theta*((imin*(2*nb_red-imin-1))/2+imax);
+			//			int index=ith+nb_theta*(iz1+nb_red*iz2);
+#ifdef _WITH_WEIGHTS
+			hthread[index]+=pos1[3]*pos2[3];
+#else //_WITH_WEIGHTS
+			hthread[index]++;
+#endif //_WITH_WEIGHTS
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } // end omp for
+
+#pragma omp critical
+    {
+      for(j=0;j<(nb_red*(nb_red+1)*nb_theta)/2;j++)
+	hh[j]+=hthread[j];
+    }
+
+    free(hthread);
+  } //end omp parallel
 }
 
 void auto_full_bf(int npix_full,int *indices,
@@ -504,217 +679,6 @@ void corr_full_pm(RadialCell *cellsD,RadialCell *cellsR,
   free(ipix_full);
 }
 
-void corr_full_twocat_pm(RadialCell *cellsD1,RadialCell *cellsD2,
-			 RadialCell *cellsR1,RadialCell *cellsR2,
-			 histo_t *D1D2,histo_t *D1R2,histo_t *R1D2,histo_t *R1R2)
-{
-  //////
-  // PM angular correlator
-
-  int i,ipix_0,ipix_f,npix_full;
-  int *ipix_full;
-  for(i=0;i<nb_red*nb_dz*nb_theta;i++) {
-    D1D2[i]=0;
-    D1R2[i]=0;
-    R1D2[i]=0;
-    R1R2[i]=0;
-  }
-  ipix_full=my_calloc(n_boxes2D,sizeof(int));
-  npix_full=0;
-  for(i=0;i<n_boxes2D;i++) {
-    if((cellsD1[i].np>0) || (cellsR1[i].np) || (cellsD2[i].np>0) || (cellsR2[i].np)) {
-      ipix_full[npix_full]=i;
-      npix_full++;
-    }
-  }
-  share_iters(npix_full,&ipix_0,&ipix_f);
-
-#pragma omp parallel default(none)				\
-  shared(cellsD1,cellsD2,cellsR1,cellsR2,D1D2,D1R2,R1D2,R1R2)	\
-  shared(n_side_phi,n_boxes2D)					\
-  shared(nb_red,nb_dz,nb_theta,ipix_0,ipix_f,ipix_full)		\
-  shared(i_red_interval,red_0,i_dz_max,i_theta_max)
-  {
-    int j;
-    histo_t *D1D2thread=(histo_t *)my_calloc(nb_red*nb_dz*nb_theta,sizeof(histo_t));
-    histo_t *D1R2thread=(histo_t *)my_calloc(nb_red*nb_dz*nb_theta,sizeof(histo_t));
-    histo_t *R1D2thread=(histo_t *)my_calloc(nb_red*nb_dz*nb_theta,sizeof(histo_t));
-    histo_t *R1R2thread=(histo_t *)my_calloc(nb_red*nb_dz*nb_theta,sizeof(histo_t));
-    double cth_max=cos(1/i_theta_max);
-
-#pragma omp for nowait schedule(dynamic)
-    for(j=ipix_0;j<ipix_f;j++) {
-      int *bounds;
-      double *pos1;
-      int icth;
-      int ip1=ipix_full[j];
-      int nD11=cellsD1[ip1].np;
-      int nD12=cellsD2[ip1].np;
-      int nR11=cellsR1[ip1].np;
-      int nR12=cellsR2[ip1].np;
-      if(nD11>0) {
-	pos1=cellsD1[ip1].ci->pos;
-	bounds=cellsD1[ip1].ci->bounds;
-      }
-      else if(nD12>0) {
-	pos1=cellsD2[ip1].ci->pos;
-	bounds=cellsD2[ip1].ci->bounds;
-      }
-      else if(nR11>0) {
-	pos1=cellsR1[ip1].ci->pos;
-	bounds=cellsR1[ip1].ci->bounds;
-      }
-      else if(nR12>0) {
-	pos1=cellsR2[ip1].ci->pos;
-	bounds=cellsR2[ip1].ci->bounds;
-      }
-      else continue;
-
-      int ii;
-
-      for(icth=bounds[0];icth<=bounds[1];icth++) {
-	int iphi;
-	int icth_n=icth*n_side_phi;
-	for(iphi=bounds[2];iphi<=bounds[3];iphi++) {
-	  double *pos2;
-	  double prod;
-	  int iphi_true=(iphi+n_side_phi)%n_side_phi;
-	  int ip2=iphi_true+icth_n;
-	  int nD21=cellsD1[ip2].np;
-	  int nR21=cellsR1[ip2].np;
-	  int nD22=cellsD2[ip2].np;
-	  int nR22=cellsR2[ip2].np;
-	  
-	  if(nD21>0)
-	    pos2=(cellsD1[ip2].ci)->pos;
-	  else if(nD22>0)
-	    pos2=(cellsD2[ip2].ci)->pos;
-	  else if(nR21>0)
-	    pos2=(cellsR1[ip2].ci)->pos;
-	  else if(nR22>0)
-	    pos2=(cellsR2[ip2].ci)->pos;
-	  else continue;
-
-	  prod=pos1[0]*pos2[0]+
-	    pos1[1]*pos2[1]+pos1[2]*pos2[2];
-	  
-	  if(prod>cth_max) {
-	    int ith=th2bin(prod);
-	    if((ith<nb_theta)&&(ith>=0)) {
-
-	      //D1D2, D1R2
-	      for(ii=0;ii<nD11;ii++) {
-		int jj;
-		double z1=cellsD1[ip1].ci->redweight[N_RW*ii];
-
-		//D1D2, different pixels
-		for(jj=0;jj<nD22;jj++) {
-		  double zmean=0.5*(z1+cellsD2[ip2].ci->redweight[N_RW*jj]);
-		  int iz_mean=(int)((zmean-red_0)*i_red_interval*nb_red);
-		  if((iz_mean>=0)&&(iz_mean<nb_red)) {
-		    double dz=fabs(z1-cellsD2[ip2].ci->redweight[N_RW*jj]);
-		    int idz=(int)(dz*i_dz_max*nb_dz);
-		    if((idz<nb_dz)&&(idz>=0)) {
-		      int index=ith+nb_theta*(idz+nb_dz*iz_mean);
-#ifdef _WITH_WEIGHTS
-		      D1D2thread[index]+=cellsD1[ip1].ci->redweight[N_RW*ii+1]*
-			cellsD2[ip2].ci->redweight[N_RW*jj+1];
-#else //_WITH_WEIGHTS
-		      D1D2thread[index]++;
-#endif //_WITH_WEIGHTS
-		    }
-		  }
-		}
-
-		//D1R2, different pixels
-		for(jj=0;jj<nR22;jj++) {
-		  double zmean=0.5*(z1+cellsR2[ip2].ci->redweight[N_RW*jj]);
-		  int iz_mean=(int)((zmean-red_0)*i_red_interval*nb_red);
-		  if((iz_mean>=0)&&(iz_mean<nb_red)) {
-		    double dz=fabs(z1-cellsR2[ip2].ci->redweight[N_RW*jj]);
-		    int idz=(int)(dz*i_dz_max*nb_dz);
-		    if((idz<nb_dz)&&(idz>=0)) {
-		      int index=ith+nb_theta*(idz+nb_dz*iz_mean);
-#ifdef _WITH_WEIGHTS
-		      D1R2thread[index]+=cellsD1[ip1].ci->redweight[N_RW*ii+1]*
-			cellsR2[ip2].ci->redweight[N_RW*jj+1];
-#else //_WITH_WEIGHTS
-		      D1R2thread[index]++;
-#endif //_WITH_WEIGHTS
-		    }
-		  }
-		}
-	      }
-
-	      //R1D2
-	      for(ii=0;ii<nD12;ii++) {
-		int jj;
-		double z1=cellsD2[ip1].ci->redweight[N_RW*ii];
-		for(jj=0;jj<nR21;jj++) {
-		  double zmean=0.5*(z1+cellsR1[ip2].ci->redweight[N_RW*jj]);
-		  int iz_mean=(int)((zmean-red_0)*i_red_interval*nb_red);
-		  if((iz_mean>=0)&&(iz_mean<nb_red)) {
-		    double dz=fabs(z1-cellsR1[ip2].ci->redweight[N_RW*jj]);
-		    int idz=(int)(dz*i_dz_max*nb_dz);
-		    if((idz<nb_dz)&&(idz>=0)) {
-		      int index=ith+nb_theta*(idz+nb_dz*iz_mean);
-#ifdef _WITH_WEIGHTS
-		      R1D2thread[index]+=cellsD2[ip1].ci->redweight[N_RW*ii+1]*
-			cellsR1[ip2].ci->redweight[N_RW*jj+1];
-#else //_WITH_WEIGHTS
-		      R1D2thread[index]++;
-#endif //_WITH_WEIGHTS
-		    }
-		  }
-		}
-	      }
-
-	      //R1R2
-	      for(ii=0;ii<nR11;ii++) {
-		int jj;
-		double z1=cellsR1[ip1].ci->redweight[N_RW*ii];
-		for(jj=0;jj<nR22;jj++) {
-		  double zmean=0.5*(z1+cellsR2[ip2].ci->redweight[N_RW*jj]);
-		  int iz_mean=(int)((zmean-red_0)*i_red_interval*nb_red);
-		  if((iz_mean>=0)&&(iz_mean<nb_red)) {
-		    double dz=fabs(z1-cellsR2[ip2].ci->redweight[N_RW*jj]);
-		    int idz=(int)(dz*i_dz_max*nb_dz);
-		    if((idz<nb_dz)&&(idz>=0)) {
-		      int index=ith+nb_theta*(idz+nb_dz*iz_mean);
-#ifdef _WITH_WEIGHTS
-		      R1R2thread[index]+=cellsR1[ip1].ci->redweight[N_RW*ii+1]*
-			cellsR2[ip2].ci->redweight[N_RW*jj+1];
-#else //_WITH_WEIGHTS
-		      R1R2thread[index]++;
-#endif //_WITH_WEIGHTS
-		    }
-		  }
-		}
-	      }
-	    }
-	  }
-	}
-      }
-    } // end omp for
-
-#pragma omp critical
-    {
-      for(j=0;j<nb_red*nb_dz*nb_theta;j++) {
-	D1D2[j]+=D1D2thread[j];
-	D1R2[j]+=D1R2thread[j];
-	R1D2[j]+=R1D2thread[j];
-	R1R2[j]+=R1R2thread[j];
-      }
-    }
-
-    free(D1D2thread);
-    free(D1R2thread);
-    free(R1D2thread);
-    free(R1R2thread);
-  } //end omp parallel
-  free(ipix_full);
-}
-
 void auto_rad_bf(int npix_full,int *indices,RadialPixel *pixrad,
 		 histo_t *hh)
 {
@@ -1041,6 +1005,129 @@ void cross_ang_bf(int npix_full,int *indices,
   } //end omp parallel
 }
 
+void corr_angular_cross_pm(Cell2D *cellsD,Cell2D *cellsD_total,
+			   Cell2D *cellsR,Cell2D *cellsR_total,
+			   histo_t *DD,histo_t *DR,histo_t *RR)
+{
+  //////
+  // PM angular correlator
+
+  int i,ipix_0,ipix_f,npix_full;
+  int *ipix_full;
+  for(i=0;i<(nb_red*(nb_red+1)*nb_theta)/2;i++) {
+    DD[i]=0;
+    DR[i]=0;
+    RR[i]=0;
+  }
+  ipix_full=my_calloc(n_boxes2D,sizeof(int));
+  npix_full=0;
+  for(i=0;i<n_boxes2D;i++) {
+    if((cellsD[i].np>0) || (cellsR[i].np)) {
+      ipix_full[npix_full]=i;
+      npix_full++;
+    }
+  }
+  share_iters(npix_full,&ipix_0,&ipix_f);
+
+#pragma omp parallel default(none)					\
+  shared(cellsD,cellsD_total,cellsR,cellsR_total)			\
+  shared(DD,DR,RR,n_side_phi,n_boxes2D)					\
+  shared(nb_theta,nb_red,i_theta_max,ipix_0,ipix_f,ipix_full)
+  {
+    int j;
+    histo_t *DDthread=(histo_t *)my_calloc((nb_red*(nb_red+1)*nb_theta)/2,sizeof(histo_t));
+    histo_t *DRthread=(histo_t *)my_calloc((nb_red*(nb_red+1)*nb_theta)/2,sizeof(histo_t));
+    histo_t *RRthread=(histo_t *)my_calloc((nb_red*(nb_red+1)*nb_theta)/2,sizeof(histo_t));
+    double cth_max=cos(1/i_theta_max);
+
+#pragma omp for nowait schedule(dynamic)
+    for(j=ipix_0;j<ipix_f;j++) {
+      Cell2DInfo *ci1;
+      int *bounds;
+      double *pos1;
+      int icth;
+      int ip1=ipix_full[j];
+      if(cellsD_total[ip1].np>0)
+	ci1=cellsD_total[ip1].ci;
+      else if(cellsR_total[ip1].np>0)
+	ci1=cellsR_total[ip1].ci;
+      else continue;
+      bounds=ci1->bounds;
+      pos1=ci1->pos;
+      for(icth=bounds[0];icth<=bounds[1];icth++) {
+	int iphi;
+	int icth_n=icth*n_side_phi;
+	for(iphi=bounds[2];iphi<=bounds[3];iphi++) {
+	  double *pos2;
+	  double prod;
+	  int iphi_true=(iphi+n_side_phi)%n_side_phi;
+	  int ip2=iphi_true+icth_n;
+	  
+	  if(cellsD_total[ip2].np>0)
+	    pos2=(cellsD_total[ip2].ci)->pos;
+	  else if(cellsR_total[ip2].np>0)
+	    pos2=(cellsR_total[ip2].ci)->pos;
+	  else continue;
+
+	  prod=pos1[0]*pos2[0]+
+	    pos1[1]*pos2[1]+pos1[2]*pos2[2];
+	  
+	  if(prod>cth_max) {
+	    int iz1;
+	    int ith=th2bin(prod);
+	    if((ith<nb_theta)&&(ith>=0)) {
+	      for(iz1=0;iz1<nb_red;iz1++) {
+		int iz2;
+		np_t nD1=cellsD[ip1*nb_red+iz1].np;
+		np_t nR1=cellsR[ip1*nb_red+iz1].np;
+		for(iz2=0;iz2<nb_red;iz2++) {
+		  np_t nD2=cellsD[ip2*nb_red+iz2].np;
+		  np_t nR2=cellsR[ip2*nb_red+iz2].np;
+		  int imin=MIN(iz1,iz2);
+		  int imax=MAX(iz1,iz2);
+		  //		  int index=ith+nb_theta*((imin*(2*nb_red-imin-1))/2+imax);
+		  //		  int index=iz1+nb_red*(iz2+nb_red*ith);		  
+		  int index=imax+(imin*(2*nb_red-imin-1))/2+ith*(nb_red*(nb_red+1))/2;
+		  DDthread[index]+=nD1*nD2;
+		  DRthread[index]+=nD1*nR2;
+		  RRthread[index]+=nR1*nR2;
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } // end omp for
+
+#pragma omp critical
+    {
+      for(j=0;j<nb_theta;j++) {
+	int iz1;
+	for(iz1=0;iz1<nb_red;iz1++) {
+	  int iz2;
+	  for(iz2=iz1;iz2<nb_red;iz2++) {
+	    int index_a=j+nb_theta*((iz1*(2*nb_red-iz1-1))/2+iz2);
+	    int index_b=iz2+(iz1*(2*nb_red-iz1-1))/2+j*(nb_red*(nb_red+1))/2;
+	    DD[index_a]+=DDthread[index_b];
+	    DR[index_a]+=DRthread[index_b];
+	    RR[index_a]+=RRthread[index_b];
+	  }
+	}
+      }
+    }
+
+    free(DDthread);
+    free(DRthread);
+    free(RRthread);
+  } //end omp parallel
+
+  for(i=0;i<(nb_red*(nb_red+1)*nb_theta)/2;i++) {
+    DD[i]/=2;
+    RR[i]/=2;
+  }
+  free(ipix_full);
+}
+
 void corr_ang_pm(Cell2D *cellsD,Cell2D *cellsR,
 		 histo_t *DD,histo_t *DR,histo_t *RR)
 {
@@ -1141,124 +1228,13 @@ void corr_ang_pm(Cell2D *cellsD,Cell2D *cellsR,
   free(ipix_full);
 }
 
-void corr_ang_twocat_pm(Cell2D *cellsD1,Cell2D *cellsD2,Cell2D *cellsR1,Cell2D *cellsR2,
-			histo_t *D1D2,histo_t *D1R2,histo_t *R1D2,histo_t *R1R2)
-{
-  //////
-  // PM angular correlator
-
-  int i,ipix_0,ipix_f,npix_full;
-  int *ipix_full;
-  for(i=0;i<nb_theta;i++) {
-    D1D2[i]=0;
-    D1R2[i]=0;
-    R1D2[i]=0;
-    R1R2[i]=0;
-  }
-  ipix_full=my_calloc(n_boxes2D,sizeof(int));
-  npix_full=0;
-  for(i=0;i<n_boxes2D;i++) {
-    if((cellsD1[i].np>0) || (cellsR1[i].np) || (cellsD2[i].np>0) || (cellsR2[i].np)) {
-      ipix_full[npix_full]=i;
-      npix_full++;
-    }
-  }
-  share_iters(npix_full,&ipix_0,&ipix_f);
-
-#pragma omp parallel default(none)				\
-  shared(cellsD1,cellsD2,cellsR1,cellsR2,D1D2,D1R2,R1D2,R1R2)	\
-  shared(n_side_phi,n_boxes2D)					\
-  shared(nb_theta,i_theta_max,ipix_0,ipix_f,ipix_full)
-  {
-    int j;
-    histo_t *D1D2thread=(histo_t *)my_calloc(nb_theta,sizeof(histo_t));
-    histo_t *D1R2thread=(histo_t *)my_calloc(nb_theta,sizeof(histo_t));
-    histo_t *R1D2thread=(histo_t *)my_calloc(nb_theta,sizeof(histo_t));
-    histo_t *R1R2thread=(histo_t *)my_calloc(nb_theta,sizeof(histo_t));
-    double cth_max=cos(1/i_theta_max);
-
-#pragma omp for nowait schedule(dynamic)
-    for(j=ipix_0;j<ipix_f;j++) {
-      Cell2DInfo *ci1;
-      int *bounds;
-      double *pos1;
-      int icth;
-      int ip1=ipix_full[j];
-      np_t nD11=cellsD1[ip1].np;
-      np_t nD12=cellsD2[ip1].np;
-      np_t nR11=cellsR1[ip1].np;
-      np_t nR12=cellsR2[ip1].np;
-      if(nD11>0)
-	ci1=cellsD1[ip1].ci;
-      else if(nD12>0)
-	ci1=cellsD2[ip1].ci;
-      else if(nR11>0)
-	ci1=cellsR1[ip1].ci;
-      else if(nR12>0)
-	ci1=cellsR2[ip1].ci;
-      else continue;
-      bounds=ci1->bounds;
-      pos1=ci1->pos;
-      for(icth=bounds[0];icth<=bounds[1];icth++) {
-	int iphi;
-	int icth_n=icth*n_side_phi;
-	for(iphi=bounds[2];iphi<=bounds[3];iphi++) {
-	  double *pos2;
-	  double prod;
-	  int iphi_true=(iphi+n_side_phi)%n_side_phi;
-	  int ip2=iphi_true+icth_n;
-	  
-	  if(cellsD1[ip2].np>0)
-	    pos2=(cellsD1[ip2].ci)->pos;
-	  else if(cellsD2[ip2].np>0)
-	    pos2=(cellsD2[ip2].ci)->pos;
-	  else if(cellsR1[ip2].np>0)
-	    pos2=(cellsR1[ip2].ci)->pos;
-	  else if(cellsR2[ip2].np>0)
-	    pos2=(cellsR2[ip2].ci)->pos;
-	  else continue;
-
-	  prod=pos1[0]*pos2[0]+
-	    pos1[1]*pos2[1]+pos1[2]*pos2[2];
-	  
-	  if(prod>cth_max) {
-	    int ith=th2bin(prod);
-	    if((ith<nb_theta)&&(ith>=0)) {
-	      D1D2thread[ith]+=nD11*cellsD2[ip2].np;
-	      D1R2thread[ith]+=nD11*cellsR2[ip2].np;
-	      R1D2thread[ith]+=nR11*cellsD2[ip2].np;
-	      R1R2thread[ith]+=nR11*cellsR2[ip2].np;
-	    }
-	  }
-	}
-      }
-    } // end omp for
-
-#pragma omp critical
-    {
-      for(j=0;j<nb_theta;j++) {
-	D1D2[j]+=D1D2thread[j];
-	D1R2[j]+=D1R2thread[j];
-	R1D2[j]+=R1D2thread[j];
-	R1R2[j]+=R1R2thread[j];
-      }
-    }
-
-    free(D1D2thread);
-    free(D1R2thread);
-    free(R1D2thread);
-    free(R1R2thread);
-  } //end omp parallel
-  free(ipix_full);
-}
-
 void auto_mono_bf(int nbox_full,int *indices,Box3D *boxes,
 		  histo_t *hh)
 {
   //////
   // Monopole auto-correlator
   int i,ibox_0,ibox_f;
-  share_iters(nbox_full,&ibox_0,&ibox_f);
+  share_iters(nbox_full,&ibox_0,&ibox_f);   //this splits the filled boxes between the MPI threads
 
   for(i=0;i<nb_r;i++) 
     hh[i]=0;
@@ -1278,9 +1254,9 @@ void auto_mono_bf(int nbox_full,int *indices,Box3D *boxes,
     }
 
 #pragma omp for nowait schedule(dynamic)
-    for(j=ibox_0;j<ibox_f;j++) {
+    for(j=ibox_0;j<ibox_f;j++) {    //loop over the boxes assigned to this MPI thread
       int ii;
-      int ip1=indices[j];
+      int ip1=indices[j];       //ip1 is the 'true' index corresponding to this box
 
       int np1=boxes[ip1].np;
 
@@ -1295,11 +1271,11 @@ void auto_mono_bf(int nbox_full,int *indices,Box3D *boxes,
       int izmin=MAX(iz1-irange[2],0);
       int izmax=MIN(iz1+irange[2],n_side[2]-1);
 
-      for(ii=0;ii<np1;ii++) {
+      for(ii=0;ii<np1;ii++) {   //loop over the particles in box ip1
 	double *pos1=&(boxes[ip1].pos[N_POS*ii]);
 	
 	int jj;
-	for(jj=ii+1;jj<np1;jj++) {
+	for(jj=ii+1;jj<np1;jj++) { //loop to calculate pairs within box ip1 without double-counting
 	  double r2;
 	  double *pos2=&(boxes[ip1].pos[N_POS*jj]);
 	  double xr[3];
@@ -1311,9 +1287,9 @@ void auto_mono_bf(int nbox_full,int *indices,Box3D *boxes,
 	    int ir=r2bin(r2);
 	    if((ir<nb_r)&&(ir>=0)) {
 #ifdef _WITH_WEIGHTS
-	      hthread[ir]+=pos1[3]*pos2[3];
+	      hthread[ir]+=pos1[3]*pos2[3]; //increment by product of weights
 #else //_WITH_WEIGHTS
-	      hthread[ir]++;
+	      hthread[ir]++;                //or increment by 1 if not using weights
 #endif //_WITH_WEIGHTS
 	    }
 	  }
@@ -1327,11 +1303,11 @@ void auto_mono_bf(int nbox_full,int *indices,Box3D *boxes,
 	    int ix;
 	    int iy_n=iy*n_side[0];
 	    for(ix=ixmin;ix<=ixmax;ix++) {
-	      int ip2=ix+iy_n+iz_n;
-	      if(boxes[ip2].np>0) {
-		if(ip2>ip1) {
+	      int ip2=ix+iy_n+iz_n;     //ip2 is the index corresponding to the 'neighbouring' box
+	      if(boxes[ip2].np>0) {     //if box ip2 contains any particles...
+		if(ip2>ip1) {               //AND if it is different to ip1 (ip2>ip1 to avoid double-counting)...
 		  int np2=boxes[ip2].np;
-		  for(jj=0;jj<np2;jj++) {
+		  for(jj=0;jj<np2;jj++) {   //...loop over the particles of ip2 calculating distances and counting pairs
 		    double r2;
 		    double *pos2=&(boxes[ip2].pos[N_POS*jj]);
 		    double xr[3];
@@ -1473,9 +1449,9 @@ void auto_3d_ps_bf(int nbox_full,int *indices,Box3D *boxes,
   for(i=0;i<nb_rl*nb_rt;i++) 
     hh[i]=0;
 
-#pragma omp parallel default(none)					\
-  shared(nbox_full,indices,boxes,hh,n_side,l_box)			\
-  shared(log_rt_max,i_rt_max,nb_rt,i_rl_max,nb_rl,ibox_0,ibox_f)
+#pragma omp parallel default(none)				\
+  shared(nbox_full,indices,boxes,hh,n_side,l_box)		\
+  shared(i_rt_max,nb_rt,i_rl_max,nb_rl,ibox_0,ibox_f)
   {
     int j;
     histo_t *hthread=(histo_t *)my_calloc(nb_rl*nb_rt,sizeof(histo_t));
@@ -1528,7 +1504,7 @@ void auto_3d_ps_bf(int nbox_full,int *indices,Box3D *boxes,
 	    if((irl<nb_rl)&&(irl>=0)) {
 	      double rt2=r2-rl*rl;
 	      if(rt2<rt2_max) {
-		int irt=rt2bin(rt2);
+		int irt=(int)(sqrt(rt2)*i_rt_max*nb_rt);
 		if((irt<nb_rt)&&(irt>=0)) {
 #ifdef _WITH_WEIGHTS
 		  hthread[irl+nb_rl*irt]+=pos1[3]*pos2[3];
@@ -1571,7 +1547,7 @@ void auto_3d_ps_bf(int nbox_full,int *indices,Box3D *boxes,
 		      if((irl<nb_rl)&&(irl>=0)) {
 			double rt2=r2-rl*rl;
 			if(rt2<rt2_max) {
-			  int irt=rt2bin(rt2);
+			  int irt=(int)(sqrt(rt2)*i_rt_max*nb_rt);
 			  if((irt<nb_rt)&&(irt>=0)) {
 #ifdef _WITH_WEIGHTS
 			    hthread[irl+nb_rl*irt]+=pos1[3]*pos2[3];
@@ -1613,9 +1589,9 @@ void cross_3d_ps_bf(int nbox_full,int *indices,
   for(i=0;i<nb_rl*nb_rt;i++) 
     hh[i]=0;
 
-#pragma omp parallel default(none)					\
-  shared(nbox_full,indices,boxes1,boxes2,hh,n_side,l_box)		\
-  shared(log_rt_max,i_rt_max,nb_rt,i_rl_max,nb_rl,ibox_0,ibox_f)
+#pragma omp parallel default(none)				\
+  shared(nbox_full,indices,boxes1,boxes2,hh,n_side,l_box)	\
+  shared(i_rt_max,nb_rt,i_rl_max,nb_rl,ibox_0,ibox_f)
   {
     int j;
     histo_t *hthread=(histo_t *)my_calloc(nb_rl*nb_rt,sizeof(histo_t));
@@ -1678,7 +1654,7 @@ void cross_3d_ps_bf(int nbox_full,int *indices,
 		    if((irl<nb_rl)&&(irl>=0)) {
 		      double rt2=r2-rl*rl;
 		      if(rt2<rt2_max) {
-			int irt=rt2bin(rt2);
+			int irt=(int)(sqrt(rt2)*i_rt_max*nb_rt);
 			if((irt<nb_rt)&&(irt>=0)) {
 #ifdef _WITH_WEIGHTS
 			  hthread[irl+nb_rl*irt]+=pos1[3]*pos2[3];
@@ -1711,7 +1687,7 @@ void auto_3d_rm_bf(int nbox_full,int *indices,Box3D *boxes,
 		   histo_t *hh)
 {
   //////
-  // Monopole auto-correlator
+  // r-mu auto-correlator
   int i,ibox_0,ibox_f;
   share_iters(nbox_full,&ibox_0,&ibox_f);
 
@@ -1847,12 +1823,153 @@ void auto_3d_rm_bf(int nbox_full,int *indices,Box3D *boxes,
   } //end omp parallel
 }
 
+void auto_3d_rm_special_bf(int nbox_full,int *indices,Box3D *boxes,
+		   histo_t *hh)
+{
+  //////
+  // r-mu auto-correlator with special condition on l-o-s
+  int i,ibox_0,ibox_f;
+  share_iters(nbox_full,&ibox_0,&ibox_f);
+
+  for(i=0;i<nb_r*nb_mu;i++) 
+    hh[i]=0;
+
+#pragma omp parallel default(none)			\
+  shared(nbox_full,indices,boxes,hh,n_side,l_box)	\
+  shared(i_r_max,nb_r,nb_mu,ibox_0,ibox_f)
+  {
+    int j;
+    histo_t *hthread=(histo_t *)my_calloc(nb_r*nb_mu,sizeof(histo_t));
+    double r2_max=1./(i_r_max*i_r_max);
+    int irange[3];
+    
+    for(j=0;j<3;j++) {
+      double dx=l_box[j]/n_side[j];
+      irange[j]=(int)(sqrt(r2_max)/dx)+1;
+    }
+
+#pragma omp for nowait schedule(dynamic)
+    for(j=ibox_0;j<ibox_f;j++) {
+      int ii;
+      int ip1=indices[j];
+
+      int np1=boxes[ip1].np;
+
+      int ix1=ip1%n_side[0];
+      int iz1=ip1/(n_side[0]*n_side[1]);
+      int iy1=(ip1-ix1-iz1*n_side[0]*n_side[1])/n_side[0];
+
+      int ixmin=MAX(ix1-irange[0],0);
+      int ixmax=MIN(ix1+irange[0],n_side[0]-1);
+      int iymin=MAX(iy1-irange[1],0);
+      int iymax=MIN(iy1+irange[1],n_side[1]-1);
+      int izmin=MAX(iz1-irange[2],0);
+      int izmax=MIN(iz1+irange[2],n_side[2]-1);
+
+      for(ii=0;ii<np1;ii++) {
+	double *pos1=&(boxes[ip1].pos[N_POS*ii]);
+	
+	int jj;
+	for(jj=ii+1;jj<np1;jj++) {
+	  double r2;
+	  double *pos2=&(boxes[ip1].pos[N_POS*jj]);
+	  double xr[3],xcm[3];
+	  xr[0]=pos1[0]-pos2[0];
+	  xr[1]=pos1[1]-pos2[1];
+	  xr[2]=pos1[2]-pos2[2];
+	  // xcm = pos1 so that angle is measured wrt l-o-s direction to first particle, not centre of mass
+      xcm[0]=pos1[0];
+      xcm[1]=pos1[1];
+      xcm[2]=pos1[2];
+	  r2=xr[0]*xr[0]+xr[1]*xr[1]+xr[2]*xr[2];
+	  if(r2<r2_max) {
+	    int ir=r2bin(r2);
+	    if((ir<nb_r)&&(ir>=0)) {
+	      int icth;
+	      if(r2==0) icth=0;
+	      else {
+		double cth=fabs(xr[0]*xcm[0]+xr[1]*xcm[1]+xr[2]*xcm[2])/
+		  sqrt((xcm[0]*xcm[0]+xcm[1]*xcm[1]+xcm[2]*xcm[2])*r2);
+		icth=(int)(cth*nb_mu);
+	      }
+	      if((icth<nb_mu)&&(icth>=0)) {
+#ifdef _WITH_WEIGHTS
+		hthread[icth+nb_mu*ir]+=pos1[3]*pos2[3];
+#else //_WITH_WEIGHTS
+		hthread[icth+nb_mu*ir]++;
+#endif //_WITH_WEIGHTS
+	      }
+	    }
+	  }
+	}
+
+	int iz;
+	for(iz=izmin;iz<=izmax;iz++) {
+	  int iy;
+	  int iz_n=iz*n_side[0]*n_side[1];
+	  for(iy=iymin;iy<=iymax;iy++) {
+	    int ix;
+	    int iy_n=iy*n_side[0];
+	    for(ix=ixmin;ix<=ixmax;ix++) {
+	      int ip2=ix+iy_n+iz_n;
+	      if(boxes[ip2].np>0) {
+		if(ip2>ip1) {
+		  int np2=boxes[ip2].np;
+		  for(jj=0;jj<np2;jj++) {
+		    double r2;
+		    double *pos2=&(boxes[ip2].pos[N_POS*jj]);
+		    double xr[3],xcm[3];
+		    xr[0]=pos1[0]-pos2[0];
+		    xr[1]=pos1[1]-pos2[1];
+		    xr[2]=pos1[2]-pos2[2];
+		    xcm[0]=0.5*(pos1[0]+pos2[0]);
+		    xcm[1]=0.5*(pos1[1]+pos2[1]);
+		    xcm[2]=0.5*(pos1[2]+pos2[2]);
+		    r2=xr[0]*xr[0]+xr[1]*xr[1]+xr[2]*xr[2];
+		    if(r2<r2_max) {
+		      int ir=r2bin(r2);
+		      if((ir<nb_r)&&(ir>=0)) {
+			int icth;
+			if(r2==0) icth=0;
+			else {
+			  double cth=fabs(xr[0]*xcm[0]+xr[1]*xcm[1]+xr[2]*xcm[2])/
+			    sqrt((xcm[0]*xcm[0]+xcm[1]*xcm[1]+xcm[2]*xcm[2])*r2);
+			  icth=(int)(cth*nb_mu);
+			}
+			if((icth<nb_mu)&&(icth>=0)) {
+#ifdef _WITH_WEIGHTS
+			  hthread[icth+nb_mu*ir]+=pos1[3]*pos2[3];
+#else //_WITH_WEIGHTS
+			  hthread[icth+nb_mu*ir]++;
+#endif //_WITH_WEIGHTS
+			}
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } // end omp for
+
+#pragma omp critical
+    {
+      for(j=0;j<nb_r*nb_mu;j++)
+	hh[j]+=hthread[j];
+    }
+
+    free(hthread);
+  } //end omp parallel
+}
+
 void cross_3d_rm_bf(int nbox_full,int *indices,
 		    Box3D *boxes1,Box3D *boxes2,
 		    histo_t *hh)
 {
   //////
-  // Monopole auto-correlator
+  // 3D r-mu cross-correlator
   int i,ibox_0,ibox_f;
   share_iters(nbox_full,&ibox_0,&ibox_f);
 
@@ -1915,6 +2032,114 @@ void cross_3d_rm_bf(int nbox_full,int *indices,
 		  xcm[0]=0.5*(pos1[0]+pos2[0]);
 		  xcm[1]=0.5*(pos1[1]+pos2[1]);
 		  xcm[2]=0.5*(pos1[2]+pos2[2]);
+		  r2=xr[0]*xr[0]+xr[1]*xr[1]+xr[2]*xr[2];
+		  if(r2<r2_max) {
+		    int ir=r2bin(r2);
+		    if((ir<nb_r)&&(ir>=0)) {
+		      int icth;
+		      if(r2==0) icth=0;
+		      else {
+			double cth=fabs(xr[0]*xcm[0]+xr[1]*xcm[1]+xr[2]*xcm[2])/
+			  sqrt((xcm[0]*xcm[0]+xcm[1]*xcm[1]+xcm[2]*xcm[2])*r2);
+			icth=(int)(cth*nb_mu);
+		      }
+		      if((icth<nb_mu)&&(icth>=0)) {
+#ifdef _WITH_WEIGHTS
+			hthread[icth+nb_mu*ir]+=pos1[3]*pos2[3];
+#else //_WITH_WEIGHTS
+			hthread[icth+nb_mu*ir]++;
+#endif //_WITH_WEIGHTS
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } // end omp for
+
+#pragma omp critical
+    {
+      for(j=0;j<nb_r*nb_mu;j++)
+	hh[j]+=hthread[j];
+    }
+
+    free(hthread);
+  } //end omp parallel
+}
+
+void cross_3d_rm_special_bf(int nbox_full,int *indices,
+		    Box3D *boxes1,Box3D *boxes2,
+		    histo_t *hh)
+{
+  //////
+  // 3D r-mu cross-correlator that uses a special line-of-sight condition
+  // designed for the cross-correlation of voids with galaxies
+  int i,ibox_0,ibox_f;
+  share_iters(nbox_full,&ibox_0,&ibox_f);
+
+  for(i=0;i<nb_r*nb_mu;i++) 
+    hh[i]=0;
+
+#pragma omp parallel default(none)				\
+  shared(nbox_full,indices,boxes1,boxes2,hh,n_side,l_box)	\
+  shared(nb_r,nb_mu,i_r_max,ibox_0,ibox_f)
+  {
+    int j;
+    histo_t *hthread=(histo_t *)my_calloc(nb_r*nb_mu,sizeof(histo_t));
+    double r2_max=1./(i_r_max*i_r_max);
+    int irange[3];
+    
+    for(j=0;j<3;j++) {
+      double dx=l_box[j]/n_side[j];
+      irange[j]=(int)(sqrt(r2_max)/dx)+1;
+    }
+
+#pragma omp for nowait schedule(dynamic)
+    for(j=ibox_0;j<ibox_f;j++) {
+      int ii;
+      int ip1=indices[j];
+
+      int np1=boxes1[ip1].np;
+
+      int ix1=ip1%n_side[0];
+      int iz1=ip1/(n_side[0]*n_side[1]);
+      int iy1=(ip1-ix1-iz1*n_side[0]*n_side[1])/n_side[0];
+
+      int ixmin=MAX(ix1-irange[0],0);
+      int ixmax=MIN(ix1+irange[0],n_side[0]-1);
+      int iymin=MAX(iy1-irange[1],0);
+      int iymax=MIN(iy1+irange[1],n_side[1]-1);
+      int izmin=MAX(iz1-irange[2],0);
+      int izmax=MIN(iz1+irange[2],n_side[2]-1);
+
+      for(ii=0;ii<np1;ii++) {
+	int iz;
+	double *pos1=&(boxes1[ip1].pos[N_POS*ii]);
+	for(iz=izmin;iz<=izmax;iz++) {
+	  int iy;
+	  int iz_n=iz*n_side[0]*n_side[1];
+	  for(iy=iymin;iy<=iymax;iy++) {
+	    int ix;
+	    int iy_n=iy*n_side[0];
+	    for(ix=ixmin;ix<=ixmax;ix++) {
+	      int ip2=ix+iy_n+iz_n;
+	      if(boxes2[ip2].np>0) {
+		int jj;
+		int np2=boxes2[ip2].np;
+		for(jj=0;jj<np2;jj++) {
+		  double r2;
+		  double *pos2=&(boxes2[ip2].pos[N_POS*jj]);
+		  double xr[3],xcm[3];
+		  xr[0]=pos1[0]-pos2[0];
+		  xr[1]=pos1[1]-pos2[1];
+		  xr[2]=pos1[2]-pos2[2];
+          // xcm = pos1 so that angle is measured wrt l-o-s direction to void centre, not centre of mass
+		  xcm[0]=pos1[0];
+		  xcm[1]=pos1[1];
+		  xcm[2]=pos1[2];
 		  r2=xr[0]*xr[0]+xr[1]*xr[1]+xr[2]*xr[2];
 		  if(r2<r2_max) {
 		    int ir=r2bin(r2);

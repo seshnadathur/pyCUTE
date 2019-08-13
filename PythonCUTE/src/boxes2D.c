@@ -209,12 +209,9 @@ static RadialCell *init_RadialCells(int npix)
   return radcell;
 }
 
-void init_2D_params(Catalog *cat_dat,Catalog *cat_ran,
-		    Catalog *cat_dat_2,Catalog *cat_ran_2,
-		    int ctype)
+void init_2D_params(Catalog *cat_dat,Catalog *cat_ran,int ctype)
 {
   int ii;
-  int npmax;
 
   cth_min_bound=cat_dat->cth[0];
   cth_max_bound=cat_dat->cth[0];
@@ -230,6 +227,7 @@ void init_2D_params(Catalog *cat_dat,Catalog *cat_ran,
     if(cth>cth_max_bound) cth_max_bound=cth;
     if(phi>phi_max_bound) phi_max_bound=phi;
   }
+
   for(ii=0;ii<cat_ran->np;ii++) {
     double cth=cat_ran->cth[ii];
     double phi=cat_ran->phi[ii];
@@ -240,30 +238,6 @@ void init_2D_params(Catalog *cat_dat,Catalog *cat_ran,
     if(phi>phi_max_bound) phi_max_bound=phi;
   }
 
-  if(use_two_catalogs) {
-    for(ii=0;ii<cat_dat_2->np;ii++) {
-      double cth=cat_dat_2->cth[ii];
-      double phi=cat_dat_2->phi[ii];
-      
-      if(cth<cth_min_bound) cth_min_bound=cth;
-      if(phi<phi_min_bound) phi_min_bound=phi;
-      if(cth>cth_max_bound) cth_max_bound=cth;
-      if(phi>phi_max_bound) phi_max_bound=phi;
-    }
-    for(ii=0;ii<cat_ran_2->np;ii++) {
-      double cth=cat_ran_2->cth[ii];
-      double phi=cat_ran_2->phi[ii];
-      
-      if(cth<cth_min_bound) cth_min_bound=cth;
-      if(phi<phi_min_bound) phi_min_bound=phi;
-      if(cth>cth_max_bound) cth_max_bound=cth;
-      if(phi>phi_max_bound) phi_max_bound=phi;
-    }
-  }
-  
-  npmax=cat_ran->np;
-  if(cat_ran_2->np>npmax)
-    npmax=cat_ran_2->np;
   if(ctype==0) {
     n_side_cth=estimate_optimal_nside_radial();
     n_side_phi=2*n_side_cth;
@@ -272,7 +246,7 @@ void init_2D_params(Catalog *cat_dat,Catalog *cat_ran,
     if(!use_pm) {
       double fsky=(cth_max_bound-cth_min_bound)*
 	(phi_max_bound-phi_min_bound)/(4*M_PI);
-      n_side_cth=estimate_optimal_nside_angular(npmax,fsky);
+      n_side_cth=estimate_optimal_nside_angular(cat_ran->np,fsky);
       n_side_phi=2*n_side_cth;
     }
   }
@@ -280,7 +254,7 @@ void init_2D_params(Catalog *cat_dat,Catalog *cat_ran,
     if(!use_pm) {
       double fsky=(cth_max_bound-cth_min_bound)*
 	(phi_max_bound-phi_min_bound)/(4*M_PI);
-      n_side_cth=estimate_optimal_nside_angular(npmax,fsky);
+      n_side_cth=estimate_optimal_nside_angular(cat_ran->np,fsky);
       n_side_phi=2*n_side_cth;
     }
   }

@@ -29,16 +29,21 @@
 ////////// Input parameters //////////
 ///
 //File names
-int use_two_catalogs=0;             //Are we doing cross-correlations?
-char fnameData1[256]="file_none";   //Data catalog filename
-char fnameData2[256]="file_none";   //Data catalog filename
-char fnameRandom1[256]="file_none"; //Random catalog filename
-char fnameRandom2[256]="file_none"; //Random catalog filename
-char fnameOut[256]="file_none";     //Output filename
-char fnameRR[256]="file_none";     //RR filename
+char fnameData[128]="default";   //Data catalog filename
+char fnameData2[128]="default";   //Second data catalog filename
+char fnameRandom[128]="default"; //Random catalog filename
+char fnameRandom2[128]="default"; //Second random catalog filename
+char fnameOut[128]="default";    //Output filename
+char fnameMask[128]="default";   //Mask filename
+char fnamedNdz[128]="default";   //z-distribution filename
 
 //Correlation
 int corr_type=-1; //Type of CF
+
+//Random catalogs
+int gen_ran=1;             //Do we generate randoms?
+int reuse_ran=0;          //Do we skip RR calculation (to save time, if it can be re-used from previous run)? 
+int fact_n_rand=-1; //n_random_particles=fact_n_rand*n_data_particles
 
 //Pixels for radial correlation
 double aperture_los=0;
@@ -47,6 +52,8 @@ double aperture_los=0;
 double omega_M=-10;
 double omega_L=-10;
 double weos=-10;
+
+int cute_verbose = 1;   // Verbosity flag - default prints everything
 
 //PM stuff
 int use_pm=-1;
@@ -57,7 +64,7 @@ int use_pm=-1;
 ///
 //Binning variables
 int logbin=0;
-double n_logint=20;
+int n_logint=20;
 //z
 int nb_red=1;
 double i_red_interval=5.;
@@ -79,7 +86,6 @@ int nb_rt=128;
 int nb_mu=128;
 double i_rl_max=0.005;
 double i_rt_max=0.005;
-double log_rt_max=2.3103;
 
 //2D boxing variables
 int n_side_cth,n_side_phi,n_boxes2D;

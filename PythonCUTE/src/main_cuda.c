@@ -41,7 +41,17 @@ void read_dr_catalogs(Catalog_f *cat_d,Catalog_f *cat_r)
   Catalog_f cat_dat,cat_ran;
 
   cat_dat=read_catalog_f(fnameData,&n_dat);
-  cat_ran=read_catalog_f(fnameRandom,&n_ran);
+  if(gen_ran) {
+    read_mask();
+    if(corr_type!=1)
+      read_red_dist();
+    timer(0);
+    cat_ran=mk_random_cat_f(fact_n_rand*cat_dat.np);
+    timer(1);
+    end_mask();
+  }
+  else
+    cat_ran=read_catalog_f(fnameRandom,&n_ran);
 
 #ifdef _DEBUG
   write_Catalog_f(cat_dat,"debug_DatCat.dat");
@@ -74,15 +84,15 @@ void run_angular_corr_pm(void)
 #ifdef _VERBOSE
   print_info("*** Angular correlation function: \n");
   print_info(" - Range: %.3lf < theta < %.3lf (deg)\n",
-	 0.,1/(DTORAD*I_THETA_MAX));
+	 0.,1/(DTORAD*i_theta_max));
   print_info(" - #bins: %d\n",NB_HISTO_1D);
   if(logbin) {
     print_info(" - Logarithmic binning with %d bins per decade",
-	   N_LOGINT);
+	   n_logint);
   }
   else {
     print_info(" - Resolution: D(theta) = %.3lf \n",
-	   1./(I_THETA_MAX*NB_HISTO_1D*DTORAD));
+	   1./(i_theta_max*NB_HISTO_1D*DTORAD));
   }
   print_info(" - Using a PM approach \n");
   print_info("\n");
@@ -137,15 +147,15 @@ void run_angular_corr_bf(void)
 #ifdef _VERBOSE
   print_info("*** Angular correlation function: \n");
   print_info(" - Range: %.3lf < theta < %.3lf (deg)\n",
-	 0.,1/(I_THETA_MAX*DTORAD));
+	 0.,1/(i_theta_max*DTORAD));
   print_info(" - #bins: %d\n",NB_HISTO_1D);
   if(logbin) {
     print_info(" - Logarithmic binning with %d bins per decade",
-	   N_LOGINT);
+	   n_logint);
   }
   else {
     print_info(" - Resolution: D(theta) = %.3lf \n",
-	   1./(I_THETA_MAX*NB_HISTO_1D*DTORAD));
+	   1./(i_theta_max*NB_HISTO_1D*DTORAD));
   }
   print_info(" - Using a brute-force approach \n");
   print_info("\n");
@@ -213,7 +223,7 @@ void run_monopole_corr_bf(void)
   print_info(" - #bins: %d\n",NB_HISTO_1D);
   if(logbin) {
     print_info(" - Logarithmic binning with %d bins per decade",
-	   N_LOGINT);
+	   n_logint);
   }
   else {
     print_info(" - Resolution: D(r) = %.3lf Mpc/h\n",
@@ -357,7 +367,7 @@ void run_3d_rm_corr_bf(void)
   print_info(" - #bins: %d\n",NB_HISTO_2D);
   if(logbin) {
     print_info(" - Logarithmic binning with %d bins per decade",
-	   N_LOGINT);
+	   n_logint);
   }
   else {
     print_info(" - Resolution: d(r) = %.3lf Mpc/h\n",
@@ -458,6 +468,11 @@ int main(int argc,char **argv)
     run_3d_rm_corr_bf();
   else if(corr_type==5) {
     fprintf(stderr,"CUTE: Full 2PCF not supported");
+    fprintf(stderr," in the CUDA implementation \n");
+    exit(1);
+  }
+  else if(corr_type==6) {
+    fprintf(stderr,"CUTE: Angular cross-correlations supported");
     fprintf(stderr," in the CUDA implementation \n");
     exit(1);
   }

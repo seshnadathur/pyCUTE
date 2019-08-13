@@ -27,13 +27,13 @@
 #include <mpi.h>
 #endif //_HAVE_MPI
 
-extern int use_two_catalogs;
-extern char fnameData1[256];
-extern char fnameData2[256];
-extern char fnameRandom1[256];
-extern char fnameRandom2[256];
-extern char fnameOut[256];
-extern char fnameRR[256];
+extern char fnameData[128];
+extern char fnameData2[128];
+extern char fnameRandom[128];
+extern char fnameRandom2[128];
+extern char fnameOut[128];
+extern char fnameMask[128];
+extern char fnamedNdz[128];
 
 extern int corr_type;
 
@@ -45,8 +45,12 @@ extern double aperture_los;
 
 extern int use_pm;
 
+extern int fact_n_rand;
+extern int gen_ran;
+extern int reuse_ran;
+
 extern int logbin;
-extern double n_logint;
+extern int n_logint;
 extern int nb_red;
 extern double i_red_interval;
 extern double red_0;
@@ -63,7 +67,6 @@ extern int nb_rt;
 extern int nb_mu;
 extern double i_rl_max;
 extern double i_rt_max;
-extern double log_rt_max;
 
 extern int n_side_cth;
 extern int n_side_phi;
@@ -71,6 +74,8 @@ extern int n_boxes2D;
 extern int n_side[3];
 extern int n_boxes3D;
 extern double l_box[3];
+
+extern int cute_verbose;
 
 /*                MACROS            */
 // Other possible macros
@@ -178,6 +183,14 @@ typedef struct {
 } Box3D; //3D cell
 
 
+//Mask cube
+typedef struct {
+  double z0,zf;
+  double cth0,cthf;
+  double phi0,phif;
+} MaskRegion; //Mask region (cube in z,cos(theta),phi)
+
+
 //Catalog
 typedef struct {
   int np;
@@ -190,21 +203,28 @@ typedef struct {
 #endif
 } Catalog; //Catalog (double precision)
 
+#ifdef _CUTE_AS_PYTHON_MODULE
+
+typedef struct {
+  int nx, ny, nz;
+  double *x, *y, *z, *corr, 
+         *D1D1, *D1D2, *D1R1, *D1R2,
+         *D2D2, *D2R1, *D2R2, 
+         *R1R1, *R1R2, 
+         *R2R2;
+} Result;
+
+extern Result *global_result;
+extern Catalog *global_galaxy_catalog;
+extern Catalog *global_galaxy_catalog2;
+extern Catalog *global_random_catalog;
+extern Catalog *global_random_catalog2;
+
+#endif
+
 typedef struct {
   int np;
   float *pos;
 } Catalog_f; //Catalog (single precision)
-
-#ifdef _CUTE_AS_PYTHON_MODULE
-
-typedef struct {
-  int nbins;
-  double *x, *corr, *DD, *DR, *RD, *RR;
-} Result;
-
-extern Result *result_global;
-extern Catalog *global_random_catalog;
-
-#endif
 
 #endif //_CUTE_DEFINE_

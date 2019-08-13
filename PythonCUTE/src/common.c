@@ -42,70 +42,6 @@ static time_t relbeg,relend,absbeg,absend;
 int NodeThis=0;
 int NNodes=1;
 
-#ifdef _CUTE_AS_PYTHON_MODULE
-
-Result *result_global = NULL;
-Catalog *global_random_catalog = NULL;
-
-Result *make_empty_result_struct(){
-  int nbins = 0;
-  if(corr_type==0)
-    nbins=nb_dz;
-  else if(corr_type==1)
-    nbins=nb_theta;
-  else if(corr_type==2)
-    nbins=nb_r;
-  Result *res = malloc(sizeof(Result));
-  res->nbins = nbins;
-  res->x    = malloc(sizeof(double)*nbins);
-  res->corr = malloc(sizeof(double)*nbins);
-  res->DD   = malloc(sizeof(double)*nbins);
-  res->DR   = malloc(sizeof(double)*nbins);
-  res->RD   = malloc(sizeof(double)*nbins);
-  res->RR   = malloc(sizeof(double)*nbins);
-  return res;
-}
-
-int get_corr_type(){
-  return corr_type;
-}
-
-void set_result(Result *res, int i, double x, double corr, double DD, double DR, double RD, double RR){
-  if(res != NULL){
-    res->x[i]    = x;
-    res->corr[i] = corr;
-    res->DD[i]   = DD;
-    res->DR[i]   = DR;
-    res->RD[i]   = RD;
-    res->RR[i]   = RR;
-  }
-}
-
-void free_result_struct(Result *res){
-  if(res != NULL){
-    free(res->x);
-    free(res->corr);
-    free(res->DD);
-    free(res->DR);
-    free(res->RD);
-    free(res->RR);
-    free(res);
-    res = NULL;
-  }
-}
-
-Catalog *read_random_catalog(char *paramfile, char *fname){
-  read_run_params(paramfile);
-  np_t sum_w = 0, sum_w2 = 0;
-  Catalog *cat = read_catalog(fname,&sum_w,&sum_w2);
-  cat->sum_w = sum_w;
-  cat->sum_w2 = sum_w2;
-  return cat;
-}
-
-#endif
-
-
 void mpi_init(int* p_argc,char*** p_argv)
 {
 #ifdef _HAVE_MPI
@@ -130,8 +66,10 @@ void share_iters(int n_iters,int *iter0,int *iterf)
   else
     i=NodeThis*(n_iters/NNodes)+(n_iters%NNodes);
 
-  printf("Node %d : %d iters, will take from %d to %d\n",
-      NodeThis,n_iters,i,i+n);
+  if(cute_verbose) {
+    printf("Node %d : %d iters, will take from %d to %d\n",
+	   NodeThis,n_iters,i,i+n);
+  }
 
   *iter0=i;
   *iterf=i+n;
@@ -163,14 +101,15 @@ void *my_calloc(size_t nmemb,size_t size)
 
 void print_info(char *fmt,...)
 {
+  if(!cute_verbose) return;
   if(NodeThis==0) {
     va_list args;
     char msg[256];
-
+    
     va_start(args,fmt);
     vsprintf(msg,fmt,args);
     va_end(args);
-
+    
     printf("%s",msg);
   }
 }
@@ -272,7 +211,7 @@ void error_read_line(char *fname,int nlin)
 
 void free_Catalog(Catalog *cat)
 {
-  if(cat->np>0) {
+  if(cat->np > 0) {
     free(cat->red);
     free(cat->cth);
     free(cat->phi);

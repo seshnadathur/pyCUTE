@@ -89,8 +89,7 @@ static Box3D *init_Boxes3D(int nbox)
   return boxes;
 }
 
-void init_3D_params(Catalog *cat_dat,Catalog *cat_ran,
-		    Catalog *cat_dat_2,Catalog *cat_ran_2,int ctype)
+void init_3D_params(Catalog *cat_dat,Catalog *cat_ran,int ctype)
 {
   int ii;
 
@@ -123,6 +122,7 @@ void init_3D_params(Catalog *cat_dat,Catalog *cat_ran,
     cat_dat->cth[ii]=y;
     cat_dat->phi[ii]=z;
   }
+
   for(ii=0;ii<cat_ran->np;ii++) {
     double cth=cat_ran->cth[ii];
     double phi=cat_ran->phi[ii];
@@ -139,51 +139,9 @@ void init_3D_params(Catalog *cat_dat,Catalog *cat_ran,
     if(z<z_min_bound) z_min_bound=z;
     if(z>z_max_bound) z_max_bound=z;
 
-    cat_ran->red[ii]=x;
+    cat_ran->red[ii]=x;  //note that despite their names red, cth and phi now actually contain Cartesian coords!
     cat_ran->cth[ii]=y;
     cat_ran->phi[ii]=z;
-  }
-  if(use_two_catalogs) {
-    for(ii=0;ii<cat_dat_2->np;ii++) {
-      double cth=cat_dat_2->cth[ii];
-      double phi=cat_dat_2->phi[ii];
-      double sth=sqrt(1-cth*cth);
-      double rr=z2r(cat_dat_2->red[ii]);
-      double x=rr*sth*cos(phi);
-      double y=rr*sth*sin(phi);
-      double z=rr*cth;
-      
-      if(x<x_min_bound) x_min_bound=x;
-      if(x>x_max_bound) x_max_bound=x;
-      if(y<y_min_bound) y_min_bound=y;
-      if(y>y_max_bound) y_max_bound=y;
-      if(z<z_min_bound) z_min_bound=z;
-      if(z>z_max_bound) z_max_bound=z;
-      
-      cat_dat_2->red[ii]=x;
-      cat_dat_2->cth[ii]=y;
-      cat_dat_2->phi[ii]=z;
-    }
-    for(ii=0;ii<cat_ran_2->np;ii++) {
-      double cth=cat_ran_2->cth[ii];
-      double phi=cat_ran_2->phi[ii];
-      double sth=sqrt(1-cth*cth);
-      double rr=z2r(cat_ran_2->red[ii]);
-      double x=rr*sth*cos(phi);
-      double y=rr*sth*sin(phi);
-      double z=rr*cth;
-      
-      if(x<x_min_bound) x_min_bound=x;
-      if(x>x_max_bound) x_max_bound=x;
-      if(y<y_min_bound) y_min_bound=y;
-      if(y>y_max_bound) y_max_bound=y;
-      if(z<z_min_bound) z_min_bound=z;
-      if(z>z_max_bound) z_max_bound=z;
-      
-      cat_ran_2->red[ii]=x;
-      cat_ran_2->cth[ii]=y;
-      cat_ran_2->phi[ii]=z;
-    }
   }
 
   double ex=FRACTION_EXTEND*(x_max_bound-x_min_bound);
@@ -213,10 +171,148 @@ void init_3D_params(Catalog *cat_dat,Catalog *cat_ran,
     fprintf(stderr,"WTF?? \n");
     exit(1);
   }
-  int npmin=cat_dat->np;
-  if(cat_dat_2->np<npmin)
-    npmin=cat_dat_2->np;
-  nside=optimal_nside(l_box_max,rmax,npmin);
+  nside=optimal_nside(l_box_max,rmax,cat_dat->np);
+
+  n_side[0]=(int)(nside*l_box[0]/l_box_max)+1;
+  n_side[1]=(int)(nside*l_box[1]/l_box_max)+1;
+  n_side[2]=(int)(nside*l_box[2]/l_box_max)+1;
+  n_boxes3D=n_side[0]*n_side[1]*n_side[2];
+
+  double dx=l_box[0]/n_side[0];
+  double dy=l_box[1]/n_side[1];
+  double dz=l_box[2]/n_side[2];
+
+  print_info("  There will be (%d,%d,%d) = %d boxes in total\n",
+	 n_side[0],n_side[1],n_side[2],n_boxes3D);
+  print_info("  Boxes will be (dx,dy,dz) = (%.3lf,%.3lf,%.3lf) \n",
+	 dx,dy,dz);
+}
+
+void init_3D_params_cross(Catalog *cat_dat1,Catalog *cat_dat2,Catalog *cat_ran1,Catalog *cat_ran2,int ctype)
+{
+  int ii;
+
+  for(ii=0;ii<cat_dat1->np;ii++) {
+    double cth=cat_dat1->cth[ii];
+    double phi=cat_dat1->phi[ii];
+    double sth=sqrt(1-cth*cth);
+    double rr=z2r(cat_dat1->red[ii]);
+    double x=rr*sth*cos(phi);
+    double y=rr*sth*sin(phi);
+    double z=rr*cth;
+
+    if(ii==0) {
+      x_min_bound=x;
+      x_max_bound=x;
+      y_min_bound=y;
+      y_max_bound=y;
+      z_min_bound=z;
+      z_max_bound=z;
+    }
+
+    if(x<x_min_bound) x_min_bound=x;
+    if(x>x_max_bound) x_max_bound=x;
+    if(y<y_min_bound) y_min_bound=y;
+    if(y>y_max_bound) y_max_bound=y;
+    if(z<z_min_bound) z_min_bound=z;
+    if(z>z_max_bound) z_max_bound=z;
+
+    cat_dat1->red[ii]=x;    //note that despite their names red, cth and phi now actually contain Cartesian coords!
+    cat_dat1->cth[ii]=y;
+    cat_dat1->phi[ii]=z;
+  }
+
+  for(ii=0;ii<cat_dat2->np;ii++) {
+    double cth=cat_dat2->cth[ii];
+    double phi=cat_dat2->phi[ii];
+    double sth=sqrt(1-cth*cth);
+    double rr=z2r(cat_dat2->red[ii]);
+    double x=rr*sth*cos(phi);
+    double y=rr*sth*sin(phi);
+    double z=rr*cth;
+
+    if(x<x_min_bound) x_min_bound=x;
+    if(x>x_max_bound) x_max_bound=x;
+    if(y<y_min_bound) y_min_bound=y;
+    if(y>y_max_bound) y_max_bound=y;
+    if(z<z_min_bound) z_min_bound=z;
+    if(z>z_max_bound) z_max_bound=z;
+
+    cat_dat2->red[ii]=x;
+    cat_dat2->cth[ii]=y;
+    cat_dat2->phi[ii]=z;
+  }
+  
+  for(ii=0;ii<cat_ran1->np;ii++) {
+    double cth=cat_ran1->cth[ii];
+    double phi=cat_ran1->phi[ii];
+    double sth=sqrt(1-cth*cth);
+    double rr=z2r(cat_ran1->red[ii]);
+    double x=rr*sth*cos(phi);
+    double y=rr*sth*sin(phi);
+    double z=rr*cth;
+
+    if(x<x_min_bound) x_min_bound=x;
+    if(x>x_max_bound) x_max_bound=x;
+    if(y<y_min_bound) y_min_bound=y;
+    if(y>y_max_bound) y_max_bound=y;
+    if(z<z_min_bound) z_min_bound=z;
+    if(z>z_max_bound) z_max_bound=z;
+
+    cat_ran1->red[ii]=x;
+    cat_ran1->cth[ii]=y;
+    cat_ran1->phi[ii]=z;
+  }
+
+  for(ii=0;ii<cat_ran2->np;ii++) {
+    double cth=cat_ran2->cth[ii];
+    double phi=cat_ran2->phi[ii];
+    double sth=sqrt(1-cth*cth);
+    double rr=z2r(cat_ran2->red[ii]);
+    double x=rr*sth*cos(phi);
+    double y=rr*sth*sin(phi);
+    double z=rr*cth;
+
+    if(x<x_min_bound) x_min_bound=x;
+    if(x>x_max_bound) x_max_bound=x;
+    if(y<y_min_bound) y_min_bound=y;
+    if(y>y_max_bound) y_max_bound=y;
+    if(z<z_min_bound) z_min_bound=z;
+    if(z>z_max_bound) z_max_bound=z;
+
+    cat_ran2->red[ii]=x;
+    cat_ran2->cth[ii]=y;
+    cat_ran2->phi[ii]=z;
+  }
+
+  double ex=FRACTION_EXTEND*(x_max_bound-x_min_bound);
+  double ey=FRACTION_EXTEND*(y_max_bound-y_min_bound);
+  double ez=FRACTION_EXTEND*(z_max_bound-z_min_bound);
+  x_max_bound+=ex;
+  y_max_bound+=ey;
+  z_max_bound+=ez;
+  x_min_bound-=ex;
+  y_min_bound-=ey;
+  z_min_bound-=ez;
+  
+  l_box[0]=x_max_bound-x_min_bound;
+  l_box[1]=y_max_bound-y_min_bound;
+  l_box[2]=z_max_bound-z_min_bound;
+
+  double l_box_max=l_box[0];
+  if(l_box[1]>l_box_max) l_box_max=l_box[1];
+  if(l_box[2]>l_box_max) l_box_max=l_box[2];
+
+  double rmax=0;
+  int nside;
+  if(ctype==2) rmax=1/i_r_max;
+  else if(ctype==3) rmax=sqrt(1/(i_rt_max*i_rt_max)+1/(i_rl_max*i_rl_max));
+  else if(ctype==4) rmax=1/i_r_max;
+  else {
+    fprintf(stderr,"WTF?? \n");
+    exit(1);
+  }
+  nside=optimal_nside(l_box_max,rmax,cat_dat2->np);  //assumes 2nd data catalogue is the larger
 
   n_side[0]=(int)(nside*l_box[0]/l_box_max)+1;
   n_side[1]=(int)(nside*l_box[1]/l_box_max)+1;
@@ -242,7 +338,7 @@ Box3D *mk_Boxes3D_from_Catalog(Catalog *cat,int **box_indices,int *n_box_full)
 
   nfull=0;
   for(ii=0;ii<cat->np;ii++) {
-    double x=cat->red[ii];
+    double x=cat->red[ii];   //this is ok because red, cth and phi are actually now Cartesian coords after init_3D_params()
     double y=cat->cth[ii];
     double z=cat->phi[ii];
     int ibox=xyz2box(x,y,z);

@@ -2,61 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="02064018-a2f0-49ce-bb60-0edfbd42e281" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/CUTEPython.i" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/CUTEPython.i" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/Makefile.python" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/CUTEPythonWrapper.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/INSTALL_WRAPPER" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/Makefile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/PythonCUTE.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/README" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/_CUTEPythonWrapper.so" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/compile_wrapper.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/boxes2D.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/boxes2D.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/boxes3D.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/boxes3D.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/boxesCUDA.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/common.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/common.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/common.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/correlator.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/correlator.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/correlator_cuda.cu" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/correlator_cuda.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/cosmo.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/cosmo.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/define.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/define.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/define.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/io.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/io.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/main.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/src/main_cuda.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/swigfile.i" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/swigfile_wrap.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/swigfile_wrap.o" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/test/corr_full_pm.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/test/param.ini" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/test/random.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/test/rr.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/OLD/test/shell.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/example_cute_python.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/boxes2D.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/boxes2D.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/boxes3D.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/boxes3D.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/common.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/common.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/common.h" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/common.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/correlator.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/correlator.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/correlator_cuda.cu" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/correlator_cuda.cu" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/define.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/define.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/define.h" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/define.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/io.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/io.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/main.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/main.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/main_cuda.c" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/src/main_cuda.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/test/corr_full_pm.dat" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/test/corr_full_pm.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/test/param.ini" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/test/param.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/test/random.dat" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/test/random.dat" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/test/rr.dat" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PythonCUTE/test/shell.dat" beforeDir="false" afterPath="$PROJECT_DIR$/PythonCUTE/test/shell.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/boxes2D.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/boxes3D.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/common.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/correlator.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/cosmo.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/define.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/io.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/pycute.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PythonCUTE/src/random.o" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -80,9 +35,35 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/PythonCUTE/Makefile">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/PythonCUTEbox/Makefile">
           <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/PythonCUTE/PYTHON_README">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="375">
+              <caret line="25" column="4" lean-forward="true" selection-start-line="25" selection-start-column="4" selection-end-line="25" selection-end-column="4" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="255">
+                <caret line="17" column="117" selection-start-line="17" selection-start-column="117" selection-end-line="17" selection-end-column="117" />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
         </entry>
       </file>
     </leaf>
@@ -94,6 +75,7 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/pycute.py" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
@@ -126,6 +108,11 @@
               <item name="pyCUTE" type="462c0819:PsiDirectoryNode" />
               <item name="PythonCUTE" type="462c0819:PsiDirectoryNode" />
               <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="pyCUTE" type="b2602c69:ProjectViewProjectNode" />
+              <item name="pyCUTE" type="462c0819:PsiDirectoryNode" />
+              <item name="PythonCUTEbox" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -163,8 +150,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="318" y="55" width="1504" height="1305" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24949427" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1523938" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -187,8 +175,12 @@
     <entry file="file://$PROJECT_DIR$/fiducial_N.ini" />
     <entry file="file://$PROJECT_DIR$/README_PYCUTE" />
     <entry file="file://$PROJECT_DIR$/pycute.py" />
-    <entry file="file://$PROJECT_DIR$/PythonCUTE/README_PYCUTE">
-      <provider selected="true" editor-type-id="text-editor" />
+    <entry file="file://$PROJECT_DIR$/Makefile">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="825">
+          <caret line="55" column="23" selection-start-line="55" selection-start-column="23" selection-end-line="55" selection-end-column="23" />
+        </state>
+      </provider>
     </entry>
     <entry file="file://$USER_HOME$/Workspace/pyCUTE/CUTEPython.i">
       <provider selected="true" editor-type-id="text-editor">
@@ -197,8 +189,38 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/PythonCUTE/README_PYCUTE">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" lean-forward="true" selection-start-line="4" selection-end-line="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PythonCUTEbox/README">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PythonCUTE/PYTHON_README">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="25" column="4" lean-forward="true" selection-start-line="25" selection-start-column="4" selection-end-line="25" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/PythonCUTEbox/Makefile">
       <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/PythonCUTE/Makefile">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="255">
+            <caret line="17" column="117" selection-start-line="17" selection-start-column="117" selection-end-line="17" selection-end-column="117" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
     </entry>
   </component>
 </project>

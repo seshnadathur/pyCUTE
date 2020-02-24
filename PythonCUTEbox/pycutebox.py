@@ -3,16 +3,16 @@ import numpy as np
 
 """
  Run CUTEbox from within Python using CUTEboxPython
- 
- Allows to load a random_catalog and pass it to CUTE to avoid 
+
+ Allows to load a random_catalog and pass it to CUTE to avoid
  having to read this from file every time in case of multiple calls.
- 
+
  Input:
     * Filename of CUTE parameterfile (standard CUTE format). If not provided
       then we assume the parameters have been set by first calling set_CUTEbox_parameters(...)
     * Catalog(s) in CUTE format
       If not provided then the catalogs is read from file inside CUTE
-      The catalog can be created by calling readCatalog(filename) 
+      The catalog can be created by calling readCatalog(filename)
 
  Output:
     * For corr_type = 1 [x, corr, paircounts] where [x] is [r]
@@ -22,24 +22,24 @@ import numpy as np
       [corr] is the correlation function (radial, angular, monopole etc.).
 
  paircounts we get depends on the options we use:
-      [ D1D1 ]               (if not use_randoms and not do_CFF) 
-      [ D1D2 ]               (if not use_randoms and     do_CFF) 
-      [ D1D1, D1R, RR ]      (if     use_randoms and not do_CFF) 
-      [ D1D2, D1R, D2R, RR ] (if     use_randoms and     do_CFF) 
+      [ D1D1 ]               (if not use_randoms and not do_CFF)
+      [ D1D2 ]               (if not use_randoms and     do_CFF)
+      [ D1D1, D1R, RR ]      (if     use_randoms and not do_CFF)
+      [ D1D2, D1R, D2R, RR ] (if     use_randoms and     do_CFF)
 
- We can also fetch paircount from [result] if wanted, see CUTEboxPython.i for 
+ We can also fetch paircount from [result] if wanted, see CUTEboxPython.i for
  availiable functions.
 
- Python has responsibillity for the memory of [catalog] (if 
+ Python has responsibillity for the memory of [catalog] (if
  they are passed to CUTE). Deallocation of catalogs are not handled automatically,
  so call cutebox.freeCatalog(random_catalog) once you are done with it.
 
 """
 def runCUTEbox(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, random_catalog = None, verbose = True):
-  
-  if(paramfile is not None): 
+
+  if(paramfile is not None):
     cutebox.read_run_params(paramfile)
-  
+
   # Check for errors in parameters
   err = cutebox.verify_parameters()
   if(err > 0): return
@@ -51,7 +51,7 @@ def runCUTEbox(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, 
   use_randoms = cutebox.get_use_randoms()
 
   # Fetch results
-  if(cutebox.get_corr_type() == 1): 
+  if(cutebox.get_corr_type() == 1):
     nx   = result.get_nx()
     x    = np.array([result.get_x(i)    for i in range(nx)])
     corr = np.array([result.get_corr(i) for i in range(nx)])
@@ -77,7 +77,7 @@ def runCUTEbox(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, 
       else:
         cutebox.free_result_struct(result)
         return x, corr, [D1D1]
-    
+
   elif(cutebox.get_corr_type() == 2 or cutebox.get_corr_type() == 3):
     nx = result.get_nx()
     ny = result.get_ny()
@@ -121,11 +121,11 @@ def runCUTEbox(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, 
         return [x, y], corr, [D1D1]
 
 """
- Set parameters in CUTE either by providing a parameterfile or 
+ Set parameters in CUTE either by providing a parameterfile or
  by setting them directly
  If paramfile is not None then we read the parameterfile
  NB: if we read the parameterfile and there are critical errors then
- C calls exit() (standard in CUTE). If we set them one by one then 
+ C calls exit() (standard in CUTE). If we set them one by one then
  errors will be shown, but no call to exit()
 """
 def set_CUTEbox_parameters(
@@ -173,7 +173,7 @@ def set_CUTEbox_parameters(
   cutebox.set_do_CCF(do_CCF)
   cutebox.set_n_grid_side(n_grid_side)
 
-  # Check if parameters are good 
+  # Check if parameters are good
   err = cutebox.verify_parameters()
 
 """
@@ -190,6 +190,19 @@ def readCatalog(filename,input_format,box_size):
   cutebox.set_input_format(input_format)
   cutebox.set_box_size(box_size)
   return cutebox.read_Catalog(filename)
+
+"""
+  Create a CUTE tracer catalog in C format from numpy arrays of X, Y, Z positions
+"""
+def createCatalogFromNumpy(x, y, z):
+  ok = True
+  if (type(x)     is not np.ndarray): ok = False
+  if (type(y)     is not np.ndarray): ok = False
+  if (type(z)     is not np.ndarray): ok = False
+  if( not ok ):
+    print("Error: all input needs to be numpy double arrays")
+    return None
+  return cutebox.create_catalog_from_numpy(x, y, z)
 
 """
  Print CUTE parameters

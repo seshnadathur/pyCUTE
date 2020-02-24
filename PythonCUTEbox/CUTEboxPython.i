@@ -44,10 +44,10 @@
 
   struct Result {
     int nx, ny, nz;
-    double *x, *y, *z, *corr, 
+    double *x, *y, *z, *corr,
          *D1D1, *D1D2, *D1R1, *D1R2,
-         *D2D2, *D2R1, *D2R2, 
-         *R1R1, *R1R2, 
+         *D2D2, *D2R1, *D2R2,
+         *R1R1, *R1R2,
          *R2R2;
   };
 %}
@@ -70,6 +70,8 @@ extern void free_result_struct(Result *res);
 extern int get_corr_type();
 extern int get_do_CCF();
 extern int get_use_randoms();
+
+extern Catalog *create_catalog_from_numpy(int n, double *x, int n1, double *y, int n2, double *z);
 
 extern int verify_parameters();
 extern void print_parameters();
@@ -115,10 +117,10 @@ struct Catalog{
 
 struct Result {
   int nx, ny, nz;
-  double *x, *y, *z, *corr, 
+  double *x, *y, *z, *corr,
          *D1D1, *D1D2, *D1R1, *D1R2,
-         *D2D2, *D2R1, *D2R2, 
-         *R1R1, *R1R2, 
+         *D2D2, *D2R1, *D2R2,
+         *R1R1, *R1R2,
          *R2R2;
 };
 

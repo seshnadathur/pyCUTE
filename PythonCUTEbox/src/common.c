@@ -65,21 +65,6 @@ int optimal_nside(double lb,double rmax,lint np)
   return MIN(nside1,nside2);
 }
 
-void print_info(char *fmt,...)
-{
-  if(!cute_verbose) return;
-  if(NodeThis==0) {
-    va_list args;
-    char msg[256];
-
-    va_start(args,fmt);
-    vsprintf(msg,fmt,args);
-    va_end(args);
-
-    printf("%s",msg);
-  }
-}
-
 void timer(int i)
 {
   /////

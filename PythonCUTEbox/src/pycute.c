@@ -129,7 +129,7 @@ void free_result_struct(Result *res){
 
 Catalog *create_catalog_from_numpy(int n, double *x, int n1, double *y, int n2, double *z){
   if(! ((n == n1) && (n1 == n2))){
-    print_info("Error: create_catalog_from_numpy inconsistent sizes of the arrays [%i %i %i]\n", n, n1, n2);
+    printf("Error: create_catalog_from_numpy inconsistent sizes of the arrays [%i %i %i]\n", n, n1, n2);
     return NULL;
   }
   Catalog *cat = malloc(sizeof(Catalog));

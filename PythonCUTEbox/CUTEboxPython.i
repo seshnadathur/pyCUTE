@@ -13,6 +13,8 @@
   extern int get_do_CCF();
   extern int get_use_randoms();
 
+  extern Catalog *create_catalog_from_numpy(int n, double *x, int n1, double *y, int n2, double *z);
+  
   extern int verify_parameters();
   extern void print_parameters();
 

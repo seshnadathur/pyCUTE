@@ -8,15 +8,15 @@ R_MAX = 120
 N_LOGINT = 9
 #Angular bins (only used for 3d r-mu correlations)
 NB_mu = 100
+# Python paths
+PYTHONINC  = -I/opt/apps/pkgs/anaconda3/2019.03/intel64/include/python3.7m
+PYTHONINC += -I/opt/apps/pkgs/anaconda3/2019.03/intel64/lib/python3.7/site-packages/numpy/core/include$
+PYTHONLIB  = -L/opt/apps/pkgs/anaconda3/2019.03/intel64/lib -lpython3.7m
 #Behavior options
 DEFINEOPTIONS = -D_VERBOSE -D_LONGIDS
 DEFINEOPTIONS += -D_HAVE_OMP #Comment this out if you don't have the OpenMP headers
 #DEFINEOPTIONS += -D_DEBUG
 #DEFINEOPTIONS += -D_LOGBIN
-# Python paths
-PYTHONINC  = -I/opt/apps/pkgs/anaconda3/2019.03/intel64/include/python3.7m
-PYTHONINC += -I/opt/apps/pkgs/anaconda3/2019.03/intel64/lib/python3.7/site-packages/numpy/core/include$
-PYTHONLIB  = -L/opt/apps/pkgs/anaconda3/2019.03/intel64/lib -lpython3.7m
 ### End of user-definable stuff
 ####################################################
 

@@ -49,23 +49,25 @@ void write_tree(branch *tree,char *fn);
 
 Result *make_empty_result_struct();
 void free_result_struct(Result *res);
-void set_result(Result *res, int i, double x, double corr, 
+void set_result(Result *res, int i, double x, double corr,
     double D1D1, double D1D2, double D1R1, double D1R2,
     double D2D2, double D2R1, double D2R2,
     double R1R1, double R1R2,
     double R2R2);
-void set_result_2d(Result *res, int i, int j, int ind, double x, double y, double corr, 
+void set_result_2d(Result *res, int i, int j, int ind, double x, double y, double corr,
     double D1D1, double D1D2, double D1R1, double D1R2,
     double D2D2, double D2R1, double D2R2,
     double R1R1, double R1R2,
     double R2R2);
-void set_result_3d(Result *res, 
-    int i, int j, int k, int ind, 
-    double x, double y, double z, double corr, 
+void set_result_3d(Result *res,
+    int i, int j, int k, int ind,
+    double x, double y, double z, double corr,
     double D1D1, double D1D2, double D1R1, double D1R2,
     double D2D2, double D2R1, double D2R2,
     double R1R1, double R1R2,
     double R2R2);
+
+Catalog *create_catalog_from_numpy(int n, double *x, int n1, double *y, int n2, double *z);
 
 #endif
 

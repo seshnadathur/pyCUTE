@@ -3,16 +3,16 @@ import numpy as np
 
 """
  Run CUTE from within Python using CUTEPython
- 
- Allows to load a random_catalog and pass it to CUTE to avoid 
+
+ Allows to load a random_catalog and pass it to CUTE to avoid
  having to read this from file every time in case of multiple calls.
- 
+
  Input:
     * Filename of CUTE parameterfile (standard CUTE format). If not provided
       then we assume the parameters have been set by first calling set_CUTE_parameters(...)
     * Catalog(s) in CUTE format
       If not provided then the catalogs is read from file inside CUTE
-      The catalog can be created by calling readCatalog(filename) 
+      The catalog can be created by calling readCatalog(filename)
 
  Output:
     * For corr_type = 0 [x, corr] where [x] is [Dz]
@@ -30,24 +30,24 @@ import numpy as np
  If paircounts are outputted then we also output (after corr)
  [ DD, DR, RR ] for corr_type < 7 and [ D1D2, D1R2, D2R1, R1R2 ] for corr_type = 7,8
 
- We can also fetch paircount from [result] if wanted, see CUTEPython.i for 
+ We can also fetch paircount from [result] if wanted, see CUTEPython.i for
  available functions.
 
- Python has responsibillity for the memory of [result] and [catalog] (if 
+ Python has responsibillity for the memory of [result] and [catalog] (if
  they are passed to CUTE). Deallocation should be handled automatically, but not tested
- so to be sure of no memory leaks we can always call cute.free_result_struct(result) 
- and cute.free_Catalog(random_catalog) 
+ so to be sure of no memory leaks we can always call cute.free_result_struct(result)
+ and cute.free_Catalog(random_catalog)
 
  MPI support is implemented, but not well tested. To run with MPI
- run as OMP_NUM_THREADS=1 mpirun -np N python2.7 script.py and remember 
+ run as OMP_NUM_THREADS=1 mpirun -np N python2.7 script.py and remember
  to call cute.finalize_mpi() in the end of the script.
 
 """
 def runCUTE(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, random_catalog = None, random_catalog2 = None, verbose = True):
-  
-  if(paramfile is not None): 
+
+  if(paramfile is not None):
     cute.read_run_params(paramfile)
-  
+
   # Check for errors in parameters
   err = cute.verify_parameters()
   if(err > 0): return
@@ -57,11 +57,11 @@ def runCUTE(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, ran
 
   # Fetch results
   corr_type_oneD = [0,1,2,7]; corr_type_twoD   = [3,4,8]; corr_type_threeD = [5,6]
-  if(cute.get_corr_type() in corr_type_oneD): 
+  if(cute.get_corr_type() in corr_type_oneD):
     nx = result.get_nx()
     x    = np.array([result.get_x(i)    for i in range(nx)])
     corr = np.array([result.get_corr(i) for i in range(nx)])
-    
+
     #===============================================
     # Fetch paircounts
     #===============================================
@@ -77,7 +77,7 @@ def runCUTE(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, ran
       RR = np.array([result.get_R1R1(i) for i in range(nx)])
       return x, corr, DD, DR, RR
     #===============================================
-    
+
     return x, corr
   elif(cute.get_corr_type() in corr_type_twoD):
     nx = result.get_nx()
@@ -114,7 +114,7 @@ def runCUTE(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, ran
           DR[i][j] = result.get_D1R1(j + ny * i)
           RR[i][j] = result.get_R1R1(j + ny * i)
     #===============================================
-    
+
     return x, y, corr
   elif(cute.get_corr_type() in corr_type_threeD):
     nx = result.get_nx()
@@ -128,7 +128,7 @@ def runCUTE(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, ran
       for j in range(ny):
         for k in range(nz):
           corr[i][j][k] = result.get_corr(k + nz * (j + ny * i))
-    
+
     #===============================================
     # Fetch paircounts
     #===============================================
@@ -143,17 +143,17 @@ def runCUTE(paramfile = None, galaxy_catalog = None, galaxy_catalog2 = None, ran
           RR[i][j][k]   = result.get_R1R1(k + nz * (j + ny * i))
     return x, y, z, corr, DD, DR, RR
     #===============================================
-    
+
     return x, y, z, corr
   else:
     return None
 
 """
- Set parameters in CUTE either by providing a parameterfile or 
+ Set parameters in CUTE either by providing a parameterfile or
  by setting them directly
  If paramfile is not None then we read the parameterfile
  NB: if we read the parameterfile and there are critical errors then
- C calls exit() (standard in CUTE). If we set them one by one then 
+ C calls exit() (standard in CUTE). If we set them one by one then
  errors will be shown, but no call to exit()
 """
 def set_CUTE_parameters(
@@ -227,7 +227,7 @@ def set_CUTE_parameters(
   cute.set_use_pm(use_pm)
   cute.set_n_pix_sph(n_pix_sph)
 
-  # Check if parameters are good 
+  # Check if parameters are good
   # err = cute.verify_parameters()
 
 """
@@ -256,7 +256,7 @@ def readCatalog(paramfile, filename):
  Use convert_to_python to convert a catalog from C format to Python format
 """
 class PyCatalog:
-  
+
   def __init__(self, with_weights = False, ccatalog = None):
     if(ccatalog is not None):
       self.convert_to_python(with_weights,ccatalog)
@@ -324,7 +324,7 @@ def createCatalogFromNumpy_phicthz(phi,cth,red,weight = None):
   if(weight is not None):
     if (type(weight) is not np.ndarray): ok = False
   if( not ok ):
-    print "Error: all input needs to be numpy double arrays (weight can be None)"
+    print("Error: all input needs to be numpy double arrays (weight can be None)")
     return None
   if(weight is None):
     tmp = np.ones(phi.size,dtype='float64')
@@ -342,7 +342,7 @@ def createCatalogFromNumpy_radecz(ra, dec, red, weight=None):
   if(weight is not None):
     if (type(weight) is not np.ndarray): ok = False
   if( not ok ):
-    print "Error: all input needs to be numpy double arrays (weight can be None)"
+    print("Error: all input needs to be numpy double arrays (weight can be None)")
     return None
   phi = np.deg2rad(ra)
   cth = np.cos(np.deg2rad(90 - dec))

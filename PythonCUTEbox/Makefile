@@ -13,13 +13,12 @@ DEFINEOPTIONS = -D_VERBOSE -D_LONGIDS
 DEFINEOPTIONS += -D_HAVE_OMP #Comment this out if you don't have the OpenMP headers
 #DEFINEOPTIONS += -D_DEBUG
 #DEFINEOPTIONS += -D_LOGBIN
+# Python paths
+PYTHONINC  = -I/opt/apps/pkgs/anaconda3/2019.03/intel64/include/python3.7m
+PYTHONINC += -I/opt/apps/pkgs/anaconda3/2019.03/intel64/lib/python3.7/site-packages/numpy/core/include$
+PYTHONLIB  = -L/opt/apps/pkgs/anaconda3/2019.03/intel64/lib -lpython3.7m
 ### End of user-definable stuff
 ####################################################
-
-# Sciama paths
-PYTHONINC  = -I/opt/apps/anaconda/2.4.1/include/python2.7
-PYTHONINC += -I/opt/apps/anaconda/2.4.1/lib/python2.7/site-packages/numpy/core/include
-PYTHONLIB  = -L/opt/apps/anaconda/2.4.1/lib -lpython2.7
 
 #Transform to inverse scales
 I_R_MAX = $(shell echo "scale=5;1./$(R_MAX)" | bc)

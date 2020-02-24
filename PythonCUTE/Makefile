@@ -11,18 +11,18 @@ DEFINEOPTIONS += -D_HAVE_OMP #Comment this out if you don't have the OpenMP head
 #DEFINEOPTIONS += -D_TRUE_ACOS
 DEFINEOPTIONS += -D_WITH_WEIGHTS
 #GSL options
-GSL_INC = /opt/apps/libs/gsl/2.1/gcc-4.4.7/include
-GSL_LIB = /opt/apps/libs/gsl/2.1/gcc-4.4.7/lib
+GSL_INC = /opt/apps/pkgs/gsl/2.5/intel64/gnu_9.1.0/include
+GSL_LIB = /opt/apps/pkgs/gsl/2.5/intel64/gnu_9.1.0/lib
+# Python options
+PYTHONINC  = -I/opt/apps/pkgs/anaconda3/2019.03/intel64/include/python3.7m
+PYTHONINC += -I/opt/apps/pkgs/anaconda3/2019.03/intel64/lib/python3.7/site-packages/numpy/core/include$
+PYTHONLIB  = -L/opt/apps/pkgs/anaconda3/2019.03/intel64/lib -lpython3.7m
 #CUDA options
 NB_H2D = 64
 OPT_PRECISION = -ftz=true -prec-div=false -prec-sqrt=false
 CUDADIR = /usr/local/cuda
 ### End of user-definable stuff
 ####################################################
-
-PYTHONINC  = -I/opt/apps/anaconda/2.4.1/include/python2.7
-PYTHONINC += -I/opt/apps/anaconda/2.4.1/lib/python2.7/site-packages/numpy/core/include
-PYTHONLIB  = -L/opt/apps/anaconda/2.4.1/lib -lpython2.7
 
 LGSL = -L$(GSL_LIB) -lgsl -lgslcblas
 

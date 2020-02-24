@@ -40,7 +40,7 @@ static time_t relbeg,relend,absbeg,absend;
 
 #ifndef FRACTION_AR
 #define FRACTION_AR 8.0
-#endif //FRACTION_AR  
+#endif //FRACTION_AR
 
 lint linecount(FILE *f)
 {
@@ -63,6 +63,21 @@ int optimal_nside(double lb,double rmax,lint np)
   int nside2=(int)(pow(0.5*np,0.3333333));
 
   return MIN(nside1,nside2);
+}
+
+void print_info(char *fmt,...)
+{
+  if(!cute_verbose) return;
+  if(NodeThis==0) {
+    va_list args;
+    char msg[256];
+
+    va_start(args,fmt);
+    vsprintf(msg,fmt,args);
+    va_end(args);
+
+    printf("%s",msg);
+  }
 }
 
 void timer(int i)
@@ -94,7 +109,7 @@ void timer(int i)
   }
 #else //_HAVE_OMP
   int diff;
-  
+
   if(i==0)
     relbeg=time(NULL);
   else if(i==1) {
@@ -102,7 +117,7 @@ void timer(int i)
     diff=(int)(difftime(relend,relbeg));
     printf("    Relative time elapsed %02d:%02d:%02d \n",
 	   diff/3600,(diff/60)%60,diff%60);
-  }    
+  }
   else if(i==2) {
     relend=time(NULL);
     diff=(int)(difftime(relend,relbeg));
@@ -199,7 +214,7 @@ void write_grid(double *grid,char *fn)
   fclose(fr);
 }
 
-static void print_branch(branch *br,FILE *fil) 
+static void print_branch(branch *br,FILE *fil)
 {
   //////
   // Recursive branch writer
@@ -213,7 +228,7 @@ static void print_branch(branch *br,FILE *fil)
     }
   }
   else {
-    for(ii=0;ii<8;ii++) 
+    for(ii=0;ii<8;ii++)
       print_branch(((branch **)(br->sons))[ii],fil);
   }
 }

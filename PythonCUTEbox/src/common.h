@@ -23,6 +23,9 @@
 #ifndef _CUTE_COMMON_
 #define _CUTE_COMMON_
 
+//General-purpose functions
+void print_info(char *fmt,...);
+
 void timer(int i);
 
 lint linecount(FILE *f);

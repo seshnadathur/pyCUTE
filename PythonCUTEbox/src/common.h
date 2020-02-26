@@ -67,7 +67,7 @@ void set_result_3d(Result *res,
     double R1R1, double R1R2,
     double R2R2);
 
-Catalog *create_catalog_from_numpy(int n, double *x, int n1, double *y, int n2, double *z);
+Catalog *create_catalog_from_numpy(int nx, double *x, int ny, double *y, int nz, double *z);
 
 #endif
 

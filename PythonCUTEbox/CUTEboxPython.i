@@ -13,8 +13,8 @@
   extern int get_do_CCF();
   extern int get_use_randoms();
 
-  extern Catalog *create_catalog_from_numpy(int n, double *x, int n1, double *y, int n2, double *z);
-  
+  extern Catalog *create_catalog_from_numpy(int nx, double *x, int ny, double *y, int nz, double *z);
+
   extern int verify_parameters();
   extern void print_parameters();
 
@@ -59,7 +59,7 @@
 import_array();
 %}
 %apply (int DIM1, double* INPLACE_ARRAY1) {(int n0, double *a0)};
-%apply (int DIM1, double* IN_ARRAY1) {(int n, double *phi), (int n1, double *cth), (int n2, double *red), (int n3, double *weight)};
+%apply (int DIM1, double* IN_ARRAY1) {(int nx, double *x), (int ny, double *y), (int nz, double *z)};
 
 #include "src/define.h"
 #include "src/common.h"
@@ -73,7 +73,7 @@ extern int get_corr_type();
 extern int get_do_CCF();
 extern int get_use_randoms();
 
-extern Catalog *create_catalog_from_numpy(int n, double *x, int n1, double *y, int n2, double *z);
+extern Catalog *create_catalog_from_numpy(int nx, double *x, int ny, double *y, int nz, double *z);
 
 extern int verify_parameters();
 extern void print_parameters();
